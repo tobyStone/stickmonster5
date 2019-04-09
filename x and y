@@ -1,0 +1,117 @@
+var x = 215;
+       var y = 224; 
+       rect(x-30,y-44, 30, 30);// head
+ 
+        rect(x-17, y-14, 4, 14);// neck
+
+
+        rect(x-32, y, 34, 45);// body
+
+
+        line(x+2, y+3, x+19, y+49);//arm
+
+
+        line(x+19, y+49, x+14, y+49);// fingers
+
+
+        line(x+19, y+49, x+20, y+56);
+
+
+fill(0);// colour
+
+
+ellipse(x-20,y-27, 5, 5); //eyes
+
+
+ellipse(x-10, y-27, 5, 5);
+
+
+line(x-15, y-19, x-17, y-24);// nose
+
+
+rect(x-34,y-24,3,3);//neck bolts
+
+
+rect(x, y-24, 3, 3);
+
+
+rect(x-35, y-25, 2, 5);
+
+
+
+
+rect(x+2, y-25, 2, 5);
+
+
+line(x-27, y-41, x-29, y-35);// forehead scar
+
+
+line(x-20, y-33, x-27, y-41);
+
+
+line(x-20, y-33, x-14, y-41);
+
+
+line(x-14, y-41, x-9, y-35);
+
+
+line(x-9, y-35, x-5, y-41);
+
+
+line(x-5, y-41, x, y-35);
+
+
+fill();// teeth
+
+
+rect(x-29, y-14, 3,6); 
+
+
+rect(x-26, y-14, 5, 3);
+
+
+rect(x-21, y-14, 3, 5);
+
+
+rect(x-16, y-14, 4, 4);
+
+
+rect(x-12, y-14, 3, 6);
+
+
+rect(x-7, y-14,2, 4);
+
+
+rect(x-5, y-14,3, 5);
+
+
+bezier(x-16, y+45, x-14, y+49, x-26, y+51, x-8, y+56);//guts
+
+
+bezier(x-28, y+45, x-30, y+51, x-25, y+47, x-18, y+55);
+
+bezier(x-1, y+45, x-1, y+50, x-16, y+48, x-20, y+55);
+
+    }};
+
+
+ 
+// back  
+var x = 215;
+var y = 224;
+
+   rect(x-30,y-44, 30, 30);// head
+        rect(x-17, y-14, 4, 14);// neck 
+        rect(x-32, y, 34, 45);// body
+        line(x-32, y+3, x-46, y+49);//arm
+         line(x-46, y+49, x-50, y+49);// fingers
+        line(x-46, y+49, x-47, y+56);
+        bezier(x-16, y+45, x-14, y+49, x-26, y+49, x-8, y+57);//guts
+bezier(x-28, y+45, x-30, y+51, x-25, y+47, x-18, y+55);
+bezier(x-1, y+45, x-1, y+50, y-16, y+48, y-20, y+55);
+fill(0);// colour
+rect(x-34, y-24, 3, 3);//neck bolts
+rect(x, y-24, 3, 3);
+rect(x-35, y-25, 2, 5);
+rect(x+2, y-25, 2, 5);
+    }};
