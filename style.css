@@ -1,0 +1,74 @@
+body {
+    display: flex;
+    margin: 0;
+    height: 100vh;
+    background-color: #333; /* Dark background for contrast */
+    font-family: sans-serif;
+}
+
+#game-container {
+    flex-grow: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #000; /* Black background for the game area */
+}
+
+#game-canvas {
+    border: 2px solid #fff; /* White border for the canvas */
+    background-color: #000; /* Ensure canvas background is black for outline effect */
+}
+
+#sidebar {
+    width: 250px;
+    padding: 20px;
+    background-color: #222; /* Dark sidebar */
+    color: #fff; /* White text */
+    border-left: 2px solid #fff;
+    display: flex;
+    flex-direction: column;
+}
+
+#sidebar h2 {
+    text-align: center;
+    margin-top: 0;
+    border-bottom: 1px solid #fff;
+    padding-bottom: 10px;
+}
+
+#monster-body {
+    flex-grow: 1; /* Allows this section to take available space */
+}
+
+#monster-body div, #brain-zoom-placeholder div { /* Styling for individual part divs */
+    border: 1px solid #555;
+    padding: 10px;
+    margin-bottom: 10px;
+    background-color: #444;
+    text-align: center;
+}
+
+#brain-zoom-placeholder {
+    border-top: 1px solid #fff;
+    padding-top: 10px;
+    text-align: center;
+}
+
+/* Basic style for items that will be drawn on canvas (will be refined in JS) */
+.game-object {
+    border: 1px solid #fff; /* White outline for objects */
+}
+
+.monster {
+    /* Placeholder - monster styling will primarily be via canvas drawing */
+}
+
+.item {
+    /* Placeholder - item styling will primarily be via canvas drawing */
+}
+
+/* Style for octagonal room (will be drawn on canvas, this is a fallback/conceptual) */
+.octagon {
+    /* Conceptual - actual octagon will be drawn via canvas API */
+    /* fill: none; stroke: #fff; stroke-width: 2px; */
+}
