@@ -48,10 +48,78 @@ body {
     text-align: center;
 }
 
-#brain-zoom-placeholder {
+/* Add these styles to style.css */
+
+#brain-zoom-controls {
     border-top: 1px solid #fff;
     padding-top: 10px;
     text-align: center;
+    margin-top: 10px; /* Add some space above the button */
+}
+
+#brain-zoom-button {
+    background-color: #555;
+    color: #fff;
+    border: 1px solid #777;
+    padding: 10px 15px;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+#brain-zoom-button:hover {
+    background-color: #666;
+}
+
+.modal {
+    position: fixed; /* Stay in place */
+    z-index: 1; /* Sit on top */
+    left: 0;
+    top: 0;
+    width: 100%; /* Full width */
+    height: 100%; /* Full height */
+    overflow: auto; /* Enable scroll if needed */
+    background-color: rgba(0,0,0,0.6); /* Black w/ opacity */
+    display: flex; /* Used to center modal content */
+    justify-content: center; /* Center horizontally */
+    align-items: center; /* Center vertically */
+}
+
+.modal-content {
+    background-color: #1e1e1e; /* Darker background for modal */
+    color: #e0e0e0; /* Light grey text */
+    margin: auto; /* Auto margins for centering, though flex handles it */
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%;
+    max-width: 500px; /* Max width */
+    border-radius: 5px;
+    position: relative; /* For positioning the close button */
+}
+
+.close-button {
+    color: #aaa;
+    float: right; /* Position to the top-right */
+    font-size: 28px;
+    font-weight: bold;
+    position: absolute; /* Position relative to modal-content */
+    top: 10px;
+    right: 20px;
+}
+
+.close-button:hover,
+.close-button:focus {
+    color: #fff; /* White on hover */
+    text-decoration: none;
+    cursor: pointer;
+}
+
+#brain-parts-display {
+    margin-top: 15px;
+    padding: 10px;
+    border: 1px dashed #444;
+    min-height: 50px;
+    text-align: center;
+    font-style: italic;
 }
 
 /* Basic style for items that will be drawn on canvas (will be refined in JS) */

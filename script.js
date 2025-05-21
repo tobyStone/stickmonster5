@@ -4,7 +4,7 @@ const ctx = canvas.getContext('2d');
 
 // Sidebar elements
 const monsterBodyDisplay = document.getElementById('monster-body');
-const brainZoomPlaceholder = document.getElementById('brain-zoom-placeholder');
+// const brainZoomPlaceholder = document.getElementById('brain-zoom-placeholder'); // This will be replaced
 
 // Game state variables
 let gameObjects = []; // To store monster, items, room elements
@@ -38,6 +38,40 @@ function resizeCanvas() {
 
 // --- Drawing Functions ---
 
+function getOctagonVertices() {
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
+    const numSides = 8;
+    const radius = Math.min(canvas.width, canvas.height) * 0.4; // Same as room radius
+    const vertices = [];
+
+    for (let i = 0; i < numSides; i++) { // Iterate 0 to numSides-1
+        vertices.push({
+            x: centerX + radius * Math.cos(i * 2 * Math.PI / numSides),
+            y: centerY + radius * Math.sin(i * 2 * Math.PI / numSides)
+        });
+    }
+    return vertices;
+}
+
+function isPointInOctagon(pointX, pointY, octagonVertices) {
+    let intersections = 0;
+    const numVertices = octagonVertices.length;
+
+    for (let i = 0; i < numVertices; i++) {
+        const p1 = octagonVertices[i];
+        const p2 = octagonVertices[(i + 1) % numVertices]; // Next vertex, wraps around
+
+        // Check if the ray from the point (pointX, pointY) intersects with the edge (p1, p2)
+        // Ray goes from (pointX, pointY) to the right (infinity)
+        if (((p1.y <= pointY && pointY < p2.y) || (p2.y <= pointY && pointY < p1.y)) &&
+            (pointX < (p2.x - p1.x) * (pointY - p1.y) / (p2.y - p1.y) + p1.x)) {
+            intersections++;
+        }
+    }
+    return (intersections % 2) === 1; // Odd number of intersections means point is inside
+}
+
 function drawOctagonRoom() {
     const centerX = canvas.width / 2;
     const centerY = canvas.height / 2;
@@ -64,11 +98,46 @@ function drawOctagonRoom() {
 function drawMonster() {
     ctx.strokeStyle = monster.color;
     ctx.lineWidth = 2;
-    // Simple rectangle for now, will be refined later based on parts
-    ctx.strokeRect(monster.x, monster.y, monster.width, monster.height);
+    const bodyX = monster.x;
+    const bodyY = monster.y;
+    const bodyWidth = monster.width; // Main body width
+    const bodyHeight = monster.height * 0.5; // Abdomen height
 
-    // TODO: Enhance drawing based on available body parts
-    // For example, draw a separate shape for the head, abdomen, and arm(s)
+    // Abdomen
+    ctx.strokeRect(bodyX, bodyY, bodyWidth, bodyHeight);
+
+    // Head
+    if (monster.parts.head) {
+        const headRadius = bodyWidth / 2.5; // Example size
+        ctx.beginPath();
+        // Position head centered on top of abdomen
+        ctx.arc(bodyX + bodyWidth / 2, bodyY - headRadius, headRadius, 0, Math.PI * 2);
+        ctx.stroke();
+    }
+
+    // Left Arm
+    if (monster.parts.armLeft) {
+        const armWidth = bodyWidth * 0.7;
+        const armHeight = bodyHeight * 0.25;
+        // Position arm extending from upper left of abdomen
+        ctx.strokeRect(bodyX - armWidth, bodyY + bodyHeight * 0.1, armWidth, armHeight);
+    }
+
+    // Right Arm
+    if (monster.parts.armRight) {
+        const armWidth = bodyWidth * 0.7;
+        const armHeight = bodyHeight * 0.25;
+        // Position arm extending from upper right of abdomen
+        ctx.strokeRect(bodyX + bodyWidth, bodyY + bodyHeight * 0.1, armWidth, armHeight);
+    }
+
+    // Leg (singular for now, as per monster.parts.legLeft)
+    if (monster.parts.legLeft) {
+        const legWidth = bodyWidth * 0.35;
+        const legHeight = monster.height * 0.45; // Longer than abdomen section
+        // Position leg centered below abdomen
+        ctx.strokeRect(bodyX + (bodyWidth - legWidth) / 2, bodyY + bodyHeight, legWidth, legHeight);
+    }
 }
 
 // --- Sidebar Update Functions ---
@@ -103,26 +172,6 @@ function updateSidebar() {
     // Add more parts as needed
 }
 
-
-// --- Game Loop and Initialization ---
-
-function gameLoop() {
-    // Update game state (movement, collisions, etc.) - to be added
-    // render game
-    drawGame();
-    requestAnimationFrame(gameLoop);
-}
-
-function initGame() {
-    window.addEventListener('resize', resizeCanvas);
-    resizeCanvas(); // Initial sizing
-    updateSidebar(); // Initial sidebar state
-    gameLoop(); // Start the game loop
-}
-
-// Start the game when the script loads
-initGame();
-
 // --- Item Definitions ---
 const items = [
     {
@@ -148,22 +197,17 @@ const items = [
 ];
 
 // Adjust item positions to be within the octagon after canvas is sized.
-// This needs to be called after initial resize and potentially on subsequent resizes
-// if item positions are meant to be relative to the dynamic octagon bounds.
 function positionItemsInRoom() {
     const centerX = canvas.width / 2;
     const centerY = canvas.height / 2;
     const radius = Math.min(canvas.width, canvas.height) * 0.4; // Same as room radius
 
-    // Example: Place right arm somewhere on the right side, leg on the left
-    // These are approximate, more precise placement within octagon might be needed.
     items.find(item => item.id === 'armRight').x = centerX + radius * 0.5;
     items.find(item => item.id === 'armRight').y = centerY - radius * 0.3;
 
     items.find(item => item.id === 'legLeft').x = centerX - radius * 0.6;
     items.find(item => item.id === 'legLeft').y = centerY + radius * 0.5;
 
-    // Ensure monster starts within bounds too
     monster.x = centerX;
     monster.y = centerY;
 }
@@ -176,10 +220,20 @@ function drawItems() {
         if (!item.isDiscovered) {
             ctx.strokeStyle = item.color;
             ctx.lineWidth = 1;
-            ctx.strokeRect(item.x, item.y, item.width, item.height);
-            // Optionally, draw text label
-            // ctx.fillStyle = '#fff';
-            // ctx.fillText(item.name, item.x, item.y - 5);
+
+            if (item.id === 'armRight') {
+                ctx.strokeRect(item.x, item.y, item.width, item.height);
+                const handWidth = item.height; 
+                const handLength = item.width * 0.3;
+                ctx.strokeRect(item.x + item.width, item.y, handLength, handWidth); 
+            } else if (item.id === 'legLeft') {
+                ctx.strokeRect(item.x, item.y, item.width, item.height);
+                const footLength = item.width * 1.5; 
+                const footThickness = item.height * 0.2;
+                ctx.strokeRect(item.x - (footLength - item.width) / 2, item.y + item.height, footLength, footThickness);
+            } else {
+                ctx.strokeRect(item.x, item.y, item.width, item.height);
+            }
         }
     });
 }
@@ -190,7 +244,7 @@ function drawGame() {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     drawOctagonRoom();
-    drawItems(); // Draw items before monster so monster can be on top
+    drawItems(); 
     drawMonster();
 }
 
@@ -208,7 +262,7 @@ document.addEventListener('keyup', (event) => {
 function handleMovement() {
     let dx = 0;
     let dy = 0;
-    const currentSpeed = monster.canHop ? monster.speed * 2 : monster.speed; // Double speed if hopping
+    const currentSpeed = monster.canHop ? monster.speed * 2 : monster.speed; 
 
     if (keysPressed['ArrowUp'] || keysPressed['w']) {
         dy -= currentSpeed;
@@ -223,20 +277,34 @@ function handleMovement() {
         dx += currentSpeed;
     }
 
-    // Basic boundary detection (canvas edges)
-    // More sophisticated boundary (octagon walls) will be complex
+    if (dx === 0 && dy === 0) {
+        return; 
+    }
+
     const nextX = monster.x + dx;
     const nextY = monster.y + dy;
+    
+    const monsterBoundingBox = [
+        { x: nextX, y: nextY },                                       
+        { x: nextX + monster.width, y: nextY },                       
+        { x: nextX + monster.width, y: nextY + monster.height },      
+        { x: nextX, y: nextY + monster.height }                       
+    ];
 
-    // Check canvas boundaries
-    if (nextX > 0 && nextX + monster.width < canvas.width) {
-        monster.x = nextX;
+    const octagonVertices = getOctagonVertices();
+    let canMove = true;
+
+    for (const corner of monsterBoundingBox) {
+        if (!isPointInOctagon(corner.x, corner.y, octagonVertices)) {
+            canMove = false;
+            break;
+        }
     }
-    if (nextY > 0 && nextY + monster.height < canvas.height) {
+
+    if (canMove) {
+        monster.x = nextX;
         monster.y = nextY;
     }
-    
-    // TODO: Implement collision with octagon walls for more precise movement
 }
 
 function checkCollisions() {
@@ -254,7 +322,7 @@ function checkCollisions() {
                 monster.parts.armRight = true;
             } else if (item.id === 'legLeft') {
                 monster.parts.legLeft = true;
-                monster.canHop = true; // Enable hopping
+                monster.canHop = true; 
                 console.log("Monster can now hop!");
             }
             updateSidebar();
@@ -262,10 +330,7 @@ function checkCollisions() {
     });
 }
 
-
 // --- Game Loop (Modification) ---
-
-// Modify gameLoop to call handleMovement and checkCollisions
 function gameLoop() {
     handleMovement();
     checkCollisions();
@@ -273,21 +338,40 @@ function gameLoop() {
     requestAnimationFrame(gameLoop);
 }
 
+// --- Brain Modal Logic ---
+const brainModal = document.getElementById('brain-modal');
+const brainZoomButton = document.getElementById('brain-zoom-button');
+const closeButton = document.querySelector('.modal .close-button');
+
+if (brainZoomButton) {
+    brainZoomButton.onclick = function() {
+        if (brainModal) brainModal.style.display = 'flex'; // Use flex for centering
+    }
+}
+
+if (closeButton) {
+    closeButton.onclick = function() {
+        if (brainModal) brainModal.style.display = 'none';
+    }
+}
+
+window.onclick = function(event) {
+    if (event.target == brainModal) {
+        if (brainModal) brainModal.style.display = 'none';
+    }
+}
+
 // --- Init Game (Modification) ---
-// Modify initGame to call positionItemsInRoom after first resize
-// and also ensure gameLoop is correctly referenced
 function initGame() {
     window.addEventListener('resize', () => {
         resizeCanvas();
-        positionItemsInRoom(); // Reposition items if canvas size changes significantly
+        positionItemsInRoom(); 
     });
-    resizeCanvas(); // Initial sizing
-    positionItemsInRoom(); // Position items and monster correctly after canvas is sized
-    updateSidebar(); // Initial sidebar state
+    resizeCanvas(); 
+    positionItemsInRoom(); 
+    updateSidebar(); 
     
-    // Ensure the modified gameLoop is called, not the old one if it was defined differently before.
-    // If gameLoop was defined globally, this will use the latest definition.
-    requestAnimationFrame(gameLoop); // Start the game loop using the modified gameLoop
+    requestAnimationFrame(gameLoop);
 }
 
 // The existing initGame() call at the end of the file should remain
