@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stick-Monster's Awakening</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="game-container">
+        <canvas id="game-canvas"></canvas>
+    </div>
+    <div id="sidebar">
+        <h2>Monster Parts</h2>
+        <div id="monster-body">
+            <!-- Body parts will be dynamically added here -->
+        </div>
+        <div id="brain-zoom-controls">
+            <button id="brain-zoom-button">View Brain Segments</button>
+        </div>
+    </div>
+    <div id="brain-modal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <h2>Brain Segments</h2>
+            <p>Brain view is not fully implemented yet. Missing parts will be shown here.</p>
+            <div id="brain-parts-display">
+                <!-- Future: display collected brain parts -->
+            </div>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>

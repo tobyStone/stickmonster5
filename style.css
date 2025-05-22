@@ -1,0 +1,142 @@
+body {
+    display: flex;
+    margin: 0;
+    height: 100vh;
+    background-color: #333; /* Dark background for contrast */
+    font-family: sans-serif;
+}
+
+#game-container {
+    flex-grow: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #000; /* Black background for the game area */
+}
+
+#game-canvas {
+    border: 2px solid #fff; /* White border for the canvas */
+    background-color: #000; /* Ensure canvas background is black for outline effect */
+}
+
+#sidebar {
+    width: 250px;
+    padding: 20px;
+    background-color: #222; /* Dark sidebar */
+    color: #fff; /* White text */
+    border-left: 2px solid #fff;
+    display: flex;
+    flex-direction: column;
+}
+
+#sidebar h2 {
+    text-align: center;
+    margin-top: 0;
+    border-bottom: 1px solid #fff;
+    padding-bottom: 10px;
+}
+
+#monster-body {
+    flex-grow: 1; /* Allows this section to take available space */
+}
+
+#monster-body div, #brain-zoom-placeholder div { /* Styling for individual part divs */
+    border: 1px solid #555;
+    padding: 10px;
+    margin-bottom: 10px;
+    background-color: #444;
+    text-align: center;
+}
+
+/* Add these styles to style.css */
+
+#brain-zoom-controls {
+    border-top: 1px solid #fff;
+    padding-top: 10px;
+    text-align: center;
+    margin-top: 10px; /* Add some space above the button */
+}
+
+#brain-zoom-button {
+    background-color: #555;
+    color: #fff;
+    border: 1px solid #777;
+    padding: 10px 15px;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+#brain-zoom-button:hover {
+    background-color: #666;
+}
+
+.modal {
+    position: fixed; /* Stay in place */
+    z-index: 1; /* Sit on top */
+    left: 0;
+    top: 0;
+    width: 100%; /* Full width */
+    height: 100%; /* Full height */
+    overflow: auto; /* Enable scroll if needed */
+    background-color: rgba(0,0,0,0.6); /* Black w/ opacity */
+    display: flex; /* Used to center modal content */
+    justify-content: center; /* Center horizontally */
+    align-items: center; /* Center vertically */
+}
+
+.modal-content {
+    background-color: #1e1e1e; /* Darker background for modal */
+    color: #e0e0e0; /* Light grey text */
+    margin: auto; /* Auto margins for centering, though flex handles it */
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%;
+    max-width: 500px; /* Max width */
+    border-radius: 5px;
+    position: relative; /* For positioning the close button */
+}
+
+.close-button {
+    color: #aaa;
+    float: right; /* Position to the top-right */
+    font-size: 28px;
+    font-weight: bold;
+    position: absolute; /* Position relative to modal-content */
+    top: 10px;
+    right: 20px;
+}
+
+.close-button:hover,
+.close-button:focus {
+    color: #fff; /* White on hover */
+    text-decoration: none;
+    cursor: pointer;
+}
+
+#brain-parts-display {
+    margin-top: 15px;
+    padding: 10px;
+    border: 1px dashed #444;
+    min-height: 50px;
+    text-align: center;
+    font-style: italic;
+}
+
+/* Basic style for items that will be drawn on canvas (will be refined in JS) */
+.game-object {
+    border: 1px solid #fff; /* White outline for objects */
+}
+
+.monster {
+    /* Placeholder - monster styling will primarily be via canvas drawing */
+}
+
+.item {
+    /* Placeholder - item styling will primarily be via canvas drawing */
+}
+
+/* Style for octagonal room (will be drawn on canvas, this is a fallback/conceptual) */
+.octagon {
+    /* Conceptual - actual octagon will be drawn via canvas API */
+    /* fill: none; stroke: #fff; stroke-width: 2px; */
+}
