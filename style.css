@@ -40,15 +40,32 @@ body {
     flex-grow: 1; /* Allows this section to take available space */
 }
 
-#monster-body div, #brain-zoom-placeholder div { /* Styling for individual part divs */
-    border: 1px solid #555;
-    padding: 10px;
+/* Add these styles to style.css */
+
+#monster-preview-container {
+    width: 100%;
+    padding: 10px 0; /* Add some vertical padding */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-bottom: 1px solid #555; /* Separator line */
     margin-bottom: 10px;
+}
+
+#sidebar-monster-canvas {
+    width: 150px;  /* Desired display width */
+    height: 200px; /* Desired display height */
+    border: 1px solid #444;
+    background-color: #000; /* Match game canvas background */
+}
+
+#monster-body-list div { /* Styling for individual part divs */
+    border: 1px solid #555;
+    padding: 8px; /* Slightly smaller padding if needed */
+    margin-bottom: 8px;
     background-color: #444;
     text-align: center;
 }
-
-/* Add these styles to style.css */
 
 #brain-zoom-controls {
     border-top: 1px solid #fff;

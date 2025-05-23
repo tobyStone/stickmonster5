@@ -3,8 +3,9 @@ const canvas = document.getElementById('game-canvas');
 const ctx = canvas.getContext('2d');
 
 // Sidebar elements
-const monsterBodyDisplay = document.getElementById('monster-body');
-// const brainZoomPlaceholder = document.getElementById('brain-zoom-placeholder'); // This will be replaced
+// const monsterBodyDisplay = document.getElementById('monster-body'); // Replaced by monsterBodyList
+const sidebarCanvas = document.getElementById('sidebar-monster-canvas');
+const sidebarCtx = sidebarCanvas ? sidebarCanvas.getContext('2d') : null; // Ensure canvas exists
 
 // Game state variables
 let gameObjects = []; // To store monster, items, room elements
@@ -38,11 +39,15 @@ function resizeCanvas() {
 }
 
 // --- Helper Functions ---
-function applyBlurToText(text, blurFactor = 0.7) {
+function applyBlurToText(text, blurFactor = 0.4) { // Default blurFactor changed to 0.4
     if (!text) return "";
     return text.split('').map(char => {
-        if (char === ' ') return ' '; // Preserve spaces
-        return (Math.random() < blurFactor) ? '.' : char; // Replace ~70% with periods
+        if (char === ' ') return ' '; 
+        // Only replace if random number is less than blurFactor and char is not a period already
+        if (char !== '.' && Math.random() < blurFactor) { 
+            return '.';
+        }
+        return char;
     }).join('');
 }
 
@@ -89,120 +94,243 @@ function drawOctagonRoom() {
     const baseRadius = Math.min(canvas.width, canvas.height) * 0.4;
     
     ctx.strokeStyle = '#fff';
-    ctx.lineWidth = 4; // Base thickness for the wall
+    ctx.lineWidth = 3; // Main wall thickness
 
-    // Store vertices to ensure consistent "chipping" and for getOctagonVertices if it needs this detail
-    // However, getOctagonVertices currently uses perfect octagon for collision.
-    // For visual detail, we can have separate logic.
-    const visualVertices = [];
-    const randomFactor = baseRadius * 0.03; // How much irregularity
-
+    const mainVertices = [];
     for (let i = 0; i < numSides; i++) {
         const angle = i * 2 * Math.PI / numSides;
-        const randomOffsetX = (Math.random() - 0.5) * randomFactor;
-        const randomOffsetY = (Math.random() - 0.5) * randomFactor;
-        visualVertices.push({
-            x: centerX + baseRadius * Math.cos(angle) + randomOffsetX,
-            y: centerY + baseRadius * Math.sin(angle) + randomOffsetY
+        mainVertices.push({
+            x: centerX + baseRadius * Math.cos(angle),
+            y: centerY + baseRadius * Math.sin(angle)
         });
     }
 
     ctx.beginPath();
-    ctx.moveTo(visualVertices[0].x, visualVertices[0].y);
+    ctx.moveTo(mainVertices[0].x, mainVertices[0].y);
 
     for (let i = 0; i < numSides; i++) {
-        const p1 = visualVertices[i];
-        const p2 = visualVertices[(i + 1) % numSides]; // Next vertex, wraps around
+        const p1 = mainVertices[i];
+        const p2 = mainVertices[(i + 1) % numSides]; // Next main vertex
 
-        // Decide if this segment has a "chip"
-        if (i % 3 === 0) { // Add a chip to every 3rd segment for example
-            const midX = (p1.x + p2.x) / 2;
-            const midY = (p1.y + p2.y) / 2;
-            const chipDepth = baseRadius * 0.02;
-            // Normal vector to the segment (approx)
-            const dx = p2.x - p1.x;
-            const dy = p2.y - p1.y;
-            const len = Math.sqrt(dx*dx + dy*dy);
-            const normX = dy / len;
-            const normY = -dx / len;
+        const segmentDx = p2.x - p1.x;
+        const segmentDy = p2.y - p1.y;
+        const segmentLength = Math.sqrt(segmentDx*segmentDx + segmentDy*segmentDy);
+        const numJaggedSegments = Math.max(5, Math.floor(segmentLength / 15)); // More segments for longer walls
 
-            ctx.lineTo(midX - dx*0.1, midY - dy*0.1); // Point before chip
-            ctx.lineTo(midX + normX * chipDepth, midY + normY * chipDepth); // Chip point inwards
-            ctx.lineTo(midX + dx*0.1, midY + dy*0.1); // Point after chip
-            ctx.lineTo(p2.x, p2.y);
-        } else {
-            ctx.lineTo(p2.x, p2.y);
+        let currentX = p1.x;
+        let currentY = p1.y;
+
+        for (let j = 0; j < numJaggedSegments; j++) {
+            if (j === numJaggedSegments - 1) { // Last jagged segment should go to p2
+                currentX = p2.x;
+                currentY = p2.y;
+            } else {
+                // Move part of the way along the main segment vector
+                const progress = (j + 1) / numJaggedSegments;
+                let nextBaseX = p1.x + segmentDx * progress;
+                let nextBaseY = p1.y + segmentDy * progress;
+
+                // Add random perpendicular offset for jaggedness
+                const perpendicularFactor = (Math.random() - 0.5) * 10; // Jaggedness amount
+                currentX = nextBaseX + (segmentDy / segmentLength) * perpendicularFactor;
+                currentY = nextBaseY - (segmentDx / segmentLength) * perpendicularFactor;
+            }
+            ctx.lineTo(currentX, currentY);
         }
-    }
-    ctx.closePath(); // Connect back to the start
-    ctx.stroke();
-
-    // Optional: Add a slightly thinner inner or outer line for more depth, or vary thickness per segment
-    // For example, draw another slightly smaller octagon with thinner lines
-    ctx.lineWidth = 1.5; // Thinner line for detail
-    ctx.strokeStyle = '#bbb'; // Slightly off-white for a subtle effect, or keep '#fff'
-    ctx.beginPath();
-    // Slightly offset and smaller octagon for an "inner wall" effect or just texture
-    const detailRadius = baseRadius * 0.97;
-    ctx.moveTo(centerX + detailRadius * Math.cos(0) + (Math.random() - 0.5) * randomFactor*0.5, 
-               centerY + detailRadius * Math.sin(0) + (Math.random() - 0.5) * randomFactor*0.5);
-    for (let i = 1; i <= numSides; i++) {
-        const angle = i * 2 * Math.PI / numSides;
-        ctx.lineTo(
-            centerX + detailRadius * Math.cos(angle) + (Math.random() - 0.5) * randomFactor*0.5, // Add some jitter
-            centerY + detailRadius * Math.sin(angle) + (Math.random() - 0.5) * randomFactor*0.5
-        );
     }
     ctx.closePath();
     ctx.stroke();
 
-    // Restore default line width if other functions expect it
-    ctx.lineWidth = 2; // Default for monster/items
+    // Optional: Add subtle interior texture lines or cracks if desired,
+    // but the main focus is the jagged outer wall.
+    // The previous inner jittered line can be added back if it looks good.
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = '#aaa'; // For subtle cracks/texture
+    for(let k=0; k<numSides * 2; k++) { // Add a few random cracks
+        const v1 = mainVertices[Math.floor(Math.random() * numSides)];
+        const v2 = mainVertices[Math.floor(Math.random() * numSides)];
+        if (Math.random() > 0.6) { // Only draw some
+            ctx.beginPath();
+            ctx.moveTo(v1.x + (Math.random()-0.5)*20, v1.y + (Math.random()-0.5)*20);
+            ctx.lineTo( (v1.x+v2.x)/2 + (Math.random()-0.5)*30 , (v1.y+v2.y)/2 + (Math.random()-0.5)*30 );
+            ctx.stroke();
+        }
+    }
+
+    ctx.lineWidth = 2; // Reset for other drawings
 }
 
 function drawMonster() {
-    ctx.strokeStyle = monster.color;
-    ctx.lineWidth = 2;
+    ctx.strokeStyle = monster.color; // '#fff'
+    ctx.lineWidth = 2; // Base outline thickness
+
     const bodyX = monster.x;
     const bodyY = monster.y;
-    const bodyWidth = monster.width; // Main body width
-    const bodyHeight = monster.height * 0.5; // Abdomen height
+    const bodyWidth = monster.width;
+    const abdomenHeight = monster.height * 0.5;
 
-    // Abdomen
-    ctx.strokeRect(bodyX, bodyY, bodyWidth, bodyHeight);
+    // 1. Abdomen (can be similar to previous 'organic' version, or more detailed)
+    ctx.beginPath();
+    ctx.moveTo(bodyX + bodyWidth * 0.05, bodyY); 
+    ctx.quadraticCurveTo(bodyX + bodyWidth / 2, bodyY - abdomenHeight * 0.05, bodyX + bodyWidth * 0.95, bodyY); 
+    ctx.lineTo(bodyX + bodyWidth * 0.9, bodyY + abdomenHeight); 
+    ctx.quadraticCurveTo(bodyX + bodyWidth / 2, bodyY + abdomenHeight + abdomenHeight * 0.05, bodyX + bodyWidth * 0.1, bodyY + abdomenHeight); 
+    ctx.closePath();
+    ctx.stroke();
+    // Add more stitches as desired.
+    drawStitch(bodyX + bodyWidth * 0.5, bodyY + abdomenHeight * 0.2, bodyX + bodyWidth * 0.5, bodyY + abdomenHeight * 0.8);
 
-    // Head
+
+    // 2. Head (with brow and hair)
     if (monster.parts.head) {
-        const headRadius = bodyWidth / 2.5; // Example size
-        ctx.beginPath();
-        // Position head centered on top of abdomen
-        ctx.arc(bodyX + bodyWidth / 2, bodyY - headRadius, headRadius, 0, Math.PI * 2);
+        const headRadiusX = bodyWidth / 2.3;
+        const headRadiusY = bodyWidth / 2.6;
+        const headCenterX = bodyX + bodyWidth / 2;
+        const headCenterY = bodyY - headRadiusY * 1.1;
+
+        ctx.beginPath(); // Main head shape
+        // More irregular ellipse using quadratic curves
+        ctx.moveTo(headCenterX - headRadiusX, headCenterY); // Left point
+        ctx.quadraticCurveTo(headCenterX - headRadiusX * 0.8, headCenterY - headRadiusY * 1.2, // Control top-left
+                             headCenterX, headCenterY - headRadiusY); // Top-mid
+        ctx.quadraticCurveTo(headCenterX + headRadiusX * 0.8, headCenterY - headRadiusY * 1.2, // Control top-right
+                             headCenterX + headRadiusX, headCenterY); // Right point
+        ctx.quadraticCurveTo(headCenterX + headRadiusX * 0.9, headCenterY + headRadiusY * 1.1, // Control bottom-right
+                             headCenterX, headCenterY + headRadiusY * 0.95); // Bottom-mid
+        ctx.quadraticCurveTo(headCenterX - headRadiusX * 0.9, headCenterY + headRadiusY * 1.1, // Control bottom-left
+                             headCenterX - headRadiusX, headCenterY); // Back to Left point
+        ctx.closePath();
         ctx.stroke();
+
+        // Heavy Brow
+        const oldLineWidth = ctx.lineWidth;
+        ctx.lineWidth = 3.5; // Thicker brow
+        ctx.beginPath();
+        ctx.moveTo(headCenterX - headRadiusX * 0.65, headCenterY - headRadiusY * 0.35);
+        ctx.bezierCurveTo(headCenterX - headRadiusX * 0.3, headCenterY - headRadiusY * 0.7, // Control 1
+                          headCenterX + headRadiusX * 0.3, headCenterY - headRadiusY * 0.7, // Control 2
+                          headCenterX + headRadiusX * 0.65, headCenterY - headRadiusY * 0.35); // End point
+        ctx.stroke();
+        ctx.lineWidth = oldLineWidth; // Reset
+
+        // Tufts of Hair
+        ctx.beginPath();
+        // Tuft 1 (left side)
+        ctx.moveTo(headCenterX - headRadiusX * 0.4, headCenterY - headRadiusY * 0.95);
+        ctx.lineTo(headCenterX - headRadiusX * 0.55, headCenterY - headRadiusY * 1.3);
+        ctx.lineTo(headCenterX - headRadiusX * 0.2, headCenterY - headRadiusY * 1.15);
+        // Tuft 2 (top-ish)
+        ctx.moveTo(headCenterX, headCenterY - headRadiusY * 1.05);
+        ctx.lineTo(headCenterX + headRadiusX * 0.1, headCenterY - headRadiusY * 1.4);
+        ctx.lineTo(headCenterX + headRadiusX * 0.25, headCenterY - headRadiusY * 1.1);
+        // Tuft 3 (right side)
+        ctx.moveTo(headCenterX + headRadiusX * 0.5, headCenterY - headRadiusY * 0.9);
+        ctx.lineTo(headCenterX + headRadiusX * 0.6, headCenterY - headRadiusY * 1.25);
+        ctx.lineTo(headCenterX + headRadiusX * 0.35, headCenterY - headRadiusY * 1.05);
+        ctx.stroke();
+        drawStitch(headCenterX, headCenterY - headRadiusY, headCenterX, headCenterY - headRadiusY * 0.7); // Stitch on forehead
     }
 
-    // Left Arm
+    // 3. Arms / Stumps
+    const armBaseY = bodyY + abdomenHeight * 0.25; // Base Y for arm connection
+    const armLength = bodyWidth * 0.7;
+    const armThickness = abdomenHeight * 0.22;
+
+    // Left Arm or Stump
+    const leftArmStumpX = bodyX + bodyWidth * 0.1; // Attachment point for left
     if (monster.parts.armLeft) {
-        const armWidth = bodyWidth * 0.7;
-        const armHeight = bodyHeight * 0.25;
-        // Position arm extending from upper left of abdomen
-        ctx.strokeRect(bodyX - armWidth, bodyY + bodyHeight * 0.1, armWidth, armHeight);
+        const armStartX = leftArmStumpX;
+        const armStartY = armBaseY;
+        ctx.beginPath();
+        ctx.moveTo(armStartX, armStartY);
+        ctx.quadraticCurveTo(armStartX - armLength * 0.6, armStartY + armThickness * 0.1, armStartX - armLength * 0.5, armStartY + armThickness * 0.7);
+        ctx.lineTo(armStartX - armLength, armStartY + armThickness * 0.5); 
+        ctx.lineTo(armStartX - armLength * 0.95, armStartY + armThickness * 1.2); 
+        ctx.quadraticCurveTo(armStartX - armLength * 0.4, armStartY + armThickness * 1.5, armStartX, armStartY + armThickness * 0.9);
+        ctx.closePath();
+        ctx.stroke();
+        drawStitch(armStartX, armStartY, armStartX - armLength * 0.1, armStartY + armThickness * 0.1); // Shoulder stitch
+    } else { // Draw Stump
+        ctx.beginPath();
+        ctx.moveTo(leftArmStumpX, armBaseY - armThickness * 0.3); // Top of stump connection
+        ctx.lineTo(leftArmStumpX - armLength * 0.05, armBaseY + armThickness * 0.4); // Jagged edge 1
+        ctx.lineTo(leftArmStumpX - armLength * 0.15, armBaseY - armThickness * 0.2); // Jagged edge 2
+        ctx.lineTo(leftArmStumpX - armLength * 0.08, armBaseY + armThickness * 0.5); // Jagged edge 3
+        ctx.lineTo(leftArmStumpX - armLength * 0.2, armBaseY);                      // Jagged edge 4
+        ctx.lineTo(leftArmStumpX - armLength * 0.1, armBaseY + armThickness * 0.6); // Bottom of stump connection
+        ctx.closePath(); // Optional, makes it look more like a sealed stump
+        ctx.stroke();
+        // Tiny dangling pieces
+        drawStitch(leftArmStumpX - armLength * 0.15, armBaseY + armThickness * 0.55, leftArmStumpX - armLength * 0.17, armBaseY + armThickness * 0.65);
     }
 
-    // Right Arm
+    // Right Arm or Stump
+    const rightArmStumpX = bodyX + bodyWidth * 0.9; // Attachment point for right
     if (monster.parts.armRight) {
-        const armWidth = bodyWidth * 0.7;
-        const armHeight = bodyHeight * 0.25;
-        // Position arm extending from upper right of abdomen
-        ctx.strokeRect(bodyX + bodyWidth, bodyY + bodyHeight * 0.1, armWidth, armHeight);
+        const armStartX = rightArmStumpX;
+        const armStartY = armBaseY;
+        ctx.beginPath();
+        ctx.moveTo(armStartX, armStartY);
+        ctx.quadraticCurveTo(armStartX + armLength * 0.6, armStartY + armThickness * 0.1, armStartX + armLength * 0.5, armStartY + armThickness * 0.7);
+        ctx.lineTo(armStartX + armLength, armStartY + armThickness * 0.5); 
+        ctx.lineTo(armStartX + armLength * 0.95, armStartY + armThickness * 1.2); 
+        ctx.quadraticCurveTo(armStartX + armLength * 0.4, armStartY + armThickness * 1.5, armStartX, armStartY + armThickness * 0.9); 
+        ctx.closePath();
+        ctx.stroke();
+        drawStitch(armStartX, armStartY, armStartX + armLength * 0.1, armStartY + armThickness * 0.1); // Shoulder stitch
+    } else { // Draw Stump
+        ctx.beginPath();
+        ctx.moveTo(rightArmStumpX, armBaseY - armThickness * 0.3); // Top of stump connection
+        ctx.lineTo(rightArmStumpX + armLength * 0.05, armBaseY + armThickness * 0.4); // Jagged edge 1
+        ctx.lineTo(rightArmStumpX + armLength * 0.15, armBaseY - armThickness * 0.2); // Jagged edge 2
+        ctx.lineTo(rightArmStumpX + armLength * 0.08, armBaseY + armThickness * 0.5); // Jagged edge 3
+        ctx.lineTo(rightArmStumpX + armLength * 0.2, armBaseY);                      // Jagged edge 4
+        ctx.lineTo(rightArmStumpX + armLength * 0.1, armBaseY + armThickness * 0.6); // Bottom of stump connection
+        ctx.closePath();
+        ctx.stroke();
+        drawStitch(rightArmStumpX + armLength * 0.15, armBaseY + armThickness * 0.55, rightArmStumpX + armLength * 0.17, armBaseY + armThickness * 0.65);
     }
 
-    // Leg (singular for now, as per monster.parts.legLeft)
+    // 4. Leg (can use previous detailed leg logic)
     if (monster.parts.legLeft) {
-        const legWidth = bodyWidth * 0.35;
-        const legHeight = monster.height * 0.45; // Longer than abdomen section
-        // Position leg centered below abdomen
-        ctx.strokeRect(bodyX + (bodyWidth - legWidth) / 2, bodyY + bodyHeight, legWidth, legHeight);
+        const legInitialX = bodyX + bodyWidth * 0.5; 
+        const legInitialY = bodyY + abdomenHeight;
+        const legLength = monster.height * 0.55; 
+        const upperLegWidth = bodyWidth * 0.33;
+        const lowerLegWidth = bodyWidth * 0.25; 
+        const footLength = bodyWidth * 0.3;
+        const footHeight = abdomenHeight * 0.15;
+        ctx.beginPath();
+        ctx.moveTo(legInitialX - upperLegWidth / 2, legInitialY); 
+        ctx.quadraticCurveTo(legInitialX - upperLegWidth / 1.5, legInitialY + legLength * 0.5, legInitialX - lowerLegWidth / 2, legInitialY + legLength * 0.9); 
+        ctx.lineTo(legInitialX - lowerLegWidth / 2 - footLength * 0.2, legInitialY + legLength + footHeight * 0.8); 
+        ctx.quadraticCurveTo(legInitialX, legInitialY + legLength + footHeight * 1.2, legInitialX + lowerLegWidth / 2 + footLength * 0.7, legInitialY + legLength + footHeight * 0.5); 
+        ctx.lineTo(legInitialX + lowerLegWidth / 2, legInitialY + legLength * 0.9); 
+        ctx.quadraticCurveTo(legInitialX + upperLegWidth / 1.2, legInitialY + legLength * 0.5, legInitialX + upperLegWidth / 2, legInitialY); 
+        ctx.closePath();
+        ctx.stroke();
+        drawStitch(legInitialX, legInitialY, legInitialX, legInitialY + legLength * 0.2); // Hip stitch
     }
+
+    // 5. Entrails
+    ctx.beginPath();
+    const entrailStartX = bodyX + bodyWidth * 0.65; // Start slightly to the right
+    const entrailStartY = bodyY + abdomenHeight * 0.85; // Near bottom of abdomen
+    ctx.moveTo(entrailStartX, entrailStartY);
+    ctx.bezierCurveTo(entrailStartX - bodyWidth * 0.2, entrailStartY + 40, // Control 1 (looping down and left)
+                      entrailStartX + bodyWidth * 0.1, entrailStartY + 50, // Control 2 (further down and slightly right)
+                      entrailStartX - bodyWidth * 0.1, entrailStartY + 25); // End point of first loop, dragging
+    ctx.quadraticCurveTo(entrailStartX - bodyWidth * 0.3, entrailStartY + 10, // Control for second smaller loop
+                         entrailStartX - bodyWidth * 0.15, entrailStartY - 5); // Tucking back towards body slightly
+    ctx.stroke();
+    
+    ctx.beginPath();
+    const entrail2StartX = bodyX + bodyWidth * 0.35; // Start slightly to the left
+    const entrail2StartY = bodyY + abdomenHeight * 0.9;
+    ctx.moveTo(entrail2StartX, entrail2StartY);
+    ctx.quadraticCurveTo(entrail2StartX + bodyWidth * 0.1, entrail2StartY + 35, // Looping down and right
+                         entrail2StartX - bodyWidth * 0.05, entrail2StartY + 15); // End point, dragging
+    ctx.stroke();
 }
 
 // Helper function for drawing stitches (add this to script.js if not already present)
@@ -298,35 +426,75 @@ function getMonsterBoundingBox(monsterObject) {
 }
 
 // --- Sidebar Update Functions ---
-function updateSidebar() {
-    monsterBodyDisplay.innerHTML = ''; // Clear current parts
+const monsterBodyList = document.getElementById('monster-body-list');
 
-    if (monster.parts.head) {
-        const headDiv = document.createElement('div');
-        headDiv.textContent = 'Head';
-        monsterBodyDisplay.appendChild(headDiv);
+function drawSidebarMonster() {
+    if (!sidebarCtx || !sidebarCanvas) return;
+
+    sidebarCtx.fillStyle = '#000';
+    sidebarCtx.fillRect(0, 0, sidebarCanvas.width, sidebarCanvas.height);
+    
+    // Global monster object modification for drawMonster call
+    let tempMonsterState = {
+        ...monster, // current parts
+        width: monster.width * 0.4, 
+        height: monster.height * 0.4,
+    };
+
+    const originalCtx = window.ctx; 
+    const originalMonster = {...window.monster}; 
+
+    window.ctx = sidebarCtx;
+    window.monster = tempMonsterState; 
+
+    sidebarCtx.save();
+    const scaleFactor = 0.35; 
+    sidebarCtx.scale(scaleFactor, scaleFactor);
+    
+    const scaledWidth = tempMonsterState.width; 
+    const scaledHeight = tempMonsterState.height;
+
+    window.monster.x = (sidebarCanvas.width / scaleFactor - scaledWidth) / 2;
+    window.monster.y = (sidebarCanvas.height / scaleFactor - scaledHeight) / 3; 
+
+    drawMonster(); 
+
+    sidebarCtx.restore();
+
+    window.ctx = originalCtx;
+    window.monster = originalMonster;
+}
+
+function updateSidebar() {
+    if (monsterBodyList) { 
+       monsterBodyList.innerHTML = ''; 
+       if (monster.parts.head) {
+           const headDiv = document.createElement('div');
+           headDiv.textContent = 'Head';
+           monsterBodyList.appendChild(headDiv);
+       }
+       if (monster.parts.abdomen) { 
+           const abdDiv = document.createElement('div');
+           abdDiv.textContent = 'Abdomen';
+           monsterBodyList.appendChild(abdDiv);
+       }
+       if (monster.parts.armLeft) {
+           const armLDiv = document.createElement('div');
+           armLDiv.textContent = 'Left Arm';
+           monsterBodyList.appendChild(armLDiv);
+       }
+       if (monster.parts.armRight) {
+           const armRDiv = document.createElement('div');
+           armRDiv.textContent = 'Right Arm';
+           monsterBodyList.appendChild(armRDiv);
+       }
+       if (monster.parts.legLeft) {
+           const legLDiv = document.createElement('div');
+           legLDiv.textContent = 'Leg';
+           monsterBodyList.appendChild(legLDiv);
+       }
     }
-    if (monster.parts.abdomen) {
-        const abdomenDiv = document.createElement('div');
-        abdomenDiv.textContent = 'Abdomen';
-        monsterBodyDisplay.appendChild(abdomenDiv);
-    }
-    if (monster.parts.armLeft) {
-        const armLDiv = document.createElement('div');
-        armLDiv.textContent = 'Left Arm';
-        monsterBodyDisplay.appendChild(armLDiv);
-    }
-    if (monster.parts.armRight) {
-        const armRDiv = document.createElement('div');
-        armRDiv.textContent = 'Right Arm';
-        monsterBodyDisplay.appendChild(armRDiv);
-    }
-    if (monster.parts.legLeft) { // Assuming one leg for now
-        const legLDiv = document.createElement('div');
-        legLDiv.textContent = 'Leg'; // Generic 'Leg' for now
-        monsterBodyDisplay.appendChild(legLDiv);
-    }
-    // Add more parts as needed
+    drawSidebarMonster(); 
 }
 
 // --- Item Definitions ---
@@ -443,35 +611,136 @@ function positionItemsInRoom() {
 
 // --- Drawing Functions (Additions) ---
 
+// --- Add Helper functions for drawing detailed furniture ---
+
+function drawDetailedChair(item) {
+    ctx.beginPath();
+    // Backrest
+    ctx.moveTo(item.x + item.width * 0.1, item.y); // Top-left of backrest
+    ctx.lineTo(item.x + item.width * 0.9, item.y + item.height * 0.05); // Top-right (rickety)
+    ctx.lineTo(item.x + item.width * 0.85, item.y + item.height * 0.4); // Bottom-right of backrest
+    ctx.lineTo(item.x + item.width * 0.15, item.y + item.height * 0.38); // Bottom-left of backrest
+    ctx.closePath();
+    // Seat
+    ctx.moveTo(item.x, item.y + item.height * 0.39); // Front-left of seat
+    ctx.lineTo(item.x + item.width, item.y + item.height * 0.41); // Front-right of seat
+    ctx.lineTo(item.x + item.width * 0.85, item.y + item.height * 0.55); // Back-right of seat
+    ctx.lineTo(item.x + item.width * 0.15, item.y + item.height * 0.53); // Back-left of seat
+    ctx.closePath();
+    // Legs (example: one rickety leg)
+    ctx.moveTo(item.x, item.y + item.height * 0.39); // Connect to seat
+    ctx.lineTo(item.x - item.width * 0.05, item.y + item.height); // Outer bottom of leg
+    ctx.lineTo(item.x + item.width * 0.1, item.y + item.height * 0.98); // Inner bottom of leg
+    // Add other legs similarly, make them uneven
+    ctx.moveTo(item.x + item.width, item.y + item.height * 0.41);
+    ctx.lineTo(item.x + item.width + item.width * 0.05, item.y + item.height * 0.95);
+    ctx.lineTo(item.x + item.width - item.width * 0.1, item.y + item.height);
+    ctx.stroke();
+
+    // Splinter details (short, sharp lines on edges)
+    drawSplinter(item.x + item.width * 0.5, item.y, 5);
+    drawSplinter(item.x, item.y + item.height * 0.7, 6);
+}
+
+function drawDetailedTable(item) {
+    ctx.beginPath();
+    // Tabletop (slightly warped)
+    ctx.moveTo(item.x, item.y + item.height * 0.05);
+    ctx.quadraticCurveTo(item.x + item.width/2, item.y - item.height*0.02, item.x + item.width, item.y + item.height*0.1);
+    ctx.lineTo(item.x + item.width * 0.95, item.y + item.height * 0.3);
+    ctx.quadraticCurveTo(item.x + item.width/2, item.y + item.height*0.35, item.x + item.width*0.05, item.y + item.height*0.25);
+    ctx.closePath();
+    // Legs (uneven and rickety)
+    ctx.moveTo(item.x + item.width*0.1, item.y + item.height*0.25); // Front-left leg top
+    ctx.lineTo(item.x + item.width*0.05, item.y + item.height); // Bottom
+    ctx.lineTo(item.x + item.width*0.15, item.y + item.height*0.95);
+    // Another leg
+    ctx.moveTo(item.x + item.width*0.85, item.y + item.height*0.3); // Front-right leg top
+    ctx.lineTo(item.x + item.width*0.9, item.y + item.height);
+    ctx.lineTo(item.x + item.width*0.8, item.y + item.height*0.9);
+    ctx.stroke();
+    drawSplinter(item.x + item.width, item.y + item.height*0.15, 7);
+}
+
+function drawDetailedTrayWithTools(item) {
+    // Tray (irregular rectangle)
+    ctx.beginPath();
+    ctx.moveTo(item.x, item.y + item.height*0.1);
+    ctx.lineTo(item.x + item.width, item.y);
+    ctx.lineTo(item.x + item.width*0.95, item.y + item.height);
+    ctx.lineTo(item.x + item.width*0.05, item.y + item.height*0.9);
+    ctx.closePath();
+    ctx.stroke();
+
+    // Tools (outlines on the tray) - keep lineWidth thin for tools
+    const prevLineWidth = ctx.lineWidth;
+    ctx.lineWidth = 1; 
+    // Scalpel shape
+    ctx.beginPath();
+    ctx.moveTo(item.x + item.width*0.2, item.y + item.height*0.3);
+    ctx.lineTo(item.x + item.width*0.5, item.y + item.height*0.25); // Blade point
+    ctx.lineTo(item.x + item.width*0.45, item.y + item.height*0.4); // Blade base
+    ctx.closePath();
+    ctx.stroke();
+    // Forceps shape (two curved lines)
+    ctx.beginPath();
+    ctx.moveTo(item.x + item.width*0.6, item.y + item.height*0.2);
+    ctx.quadraticCurveTo(item.x + item.width*0.75, item.y + item.height*0.5, item.x + item.width*0.65, item.y + item.height*0.8);
+    ctx.moveTo(item.x + item.width*0.65, item.y + item.height*0.2); // second arm
+    ctx.quadraticCurveTo(item.x + item.width*0.80, item.y + item.height*0.5, item.x + item.width*0.70, item.y + item.height*0.8);
+    ctx.stroke();
+    ctx.lineWidth = prevLineWidth; // Restore line width
+}
+
+function drawSplinter(x, y, length) { // Helper for splinters
+    ctx.beginPath();
+    ctx.moveTo(x,y);
+    ctx.lineTo(x + (Math.random()-0.5)*length*0.5, y + (Math.random()-0.5)*length*1.5);
+    ctx.stroke();
+}
+
+
+// Modify drawItems to call these helpers:
 function drawItems() {
     items.forEach(item => {
-        // If item is collected, do not draw it, regardless of discovery state
-        if (item.isCollected === true) { // Check explicitly for true
-            return; // Skip drawing this item
+        if (item.isCollected === true) {
+            return; 
         }
-
-        if (item.isDiscovered) { // Only draw if discovered (and not collected)
+        if (item.isDiscovered) {
             ctx.strokeStyle = item.color;
-            ctx.lineWidth = 1; 
+            // ctx.lineWidth = 1.5; // Slightly thicker for furniture outlines (original instruction)
+            // Let each drawing function set its preferred lineWidth
 
             if (item.id === 'armRight') {
+                ctx.lineWidth = 1; // As per original detailed arm/leg
                 // Main arm part
                 ctx.strokeRect(item.x, item.y, item.width, item.height);
                 const handWidth = item.height; 
                 const handLength = item.width * 0.3;
                 ctx.strokeRect(item.x + item.width, item.y, handLength, handWidth); 
             } else if (item.id === 'legLeft') {
+                ctx.lineWidth = 1; // As per original detailed arm/leg
                 // Main leg part
                 ctx.strokeRect(item.x, item.y, item.width, item.height);
                 const footLength = item.width * 1.5; 
                 const footThickness = item.height * 0.2;
                 ctx.strokeRect(item.x - (footLength - item.width) / 2, item.y + item.height, footLength, footThickness);
-            } else {
-                // Default drawing for other items (e.g., furniture)
+            } else if (item.id === 'surgeonsChair') {
+                ctx.lineWidth = 1.5; // Furniture outline thickness
+                drawDetailedChair(item);
+            } else if (item.id === 'ricketyTable') {
+                ctx.lineWidth = 1.5; // Furniture outline thickness
+                drawDetailedTable(item);
+            } else if (item.id === 'toolsTray') {
+                ctx.lineWidth = 1.5; // Tray outline thickness
+                drawDetailedTrayWithTools(item);
+            } else { // Fallback for any other items
+                ctx.lineWidth = 1;
                 ctx.strokeRect(item.x, item.y, item.width, item.height);
             }
         }
     });
+    ctx.lineWidth = 2; // Reset default for monster/other game elements
 }
 
 // Modify drawGame to include items
@@ -667,6 +936,11 @@ window.onclick = function(event) {
 
 // --- Init Game (Modification) ---
 function initGame() {
+    if (sidebarCanvas) { // Ensure canvas element exists before setting width/height
+        sidebarCanvas.width = 150; 
+        sidebarCanvas.height = 200;
+    }
+
     window.addEventListener('resize', () => {
         resizeCanvas();
         positionItemsInRoom(); 
