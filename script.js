@@ -410,7 +410,7 @@ const items = [
         color: '#fff',
         isDiscovered: false,
         name: 'Right Arm',
-        description: "A d.t.ch.d r.ght .rm. L..ks l.ke m.n.", // ~70% blurred
+        description: "A d.t.ch.d r.ght .rm. Lo.ks l.ke m.n.", // ~70% blurred
         isCollected: false // New property
     },
     {
