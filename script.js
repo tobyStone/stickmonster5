@@ -171,13 +171,83 @@ function drawMonster() {
     // Abdomen
     ctx.strokeRect(bodyX, bodyY, bodyWidth, bodyHeight);
 
+    // Entrails
+    // Curve 1
+    ctx.beginPath();
+    ctx.moveTo(bodyX + 16, bodyY + 45);
+    ctx.bezierCurveTo(bodyX + 18, bodyY + 49, bodyX + 6,  bodyY + 51, bodyX + 24, bodyY + 56);
+    ctx.stroke();
+
+    // Curve 2
+    ctx.beginPath();
+    ctx.moveTo(bodyX + 4,  bodyY + 45);
+    ctx.bezierCurveTo(bodyX + 2,  bodyY + 51, bodyX + 7,  bodyY + 47, bodyX + 14, bodyY + 55);
+    ctx.stroke();
+
+    // Curve 3
+    ctx.beginPath();
+    ctx.moveTo(bodyX + 31, bodyY + 45);
+    ctx.bezierCurveTo(bodyX + 31, bodyY + 50, bodyX + 16, bodyY + 48, bodyX + 12, bodyY + 55);
+    ctx.stroke();
+
     // Head
     if (monster.parts.head) {
         const headRadius = bodyWidth / 2.5; // Example size
         ctx.beginPath();
         // Position head centered on top of abdomen
-        ctx.arc(bodyX + bodyWidth / 2, bodyY - headRadius, headRadius, 0, Math.PI * 2);
+        const headCenterX = bodyX + bodyWidth / 2;
+        const headCenterY = bodyY - headRadius;
+        ctx.arc(headCenterX, headCenterY, headRadius, 0, Math.PI * 2);
         ctx.stroke();
+
+        // Hair tufts
+        const hairLength = headRadius * 0.4; // Length of hair tufts
+
+        // Central tuft (pointing upwards)
+        ctx.beginPath();
+        ctx.moveTo(headCenterX, headCenterY - headRadius); // Start at top of head
+        ctx.lineTo(headCenterX, headCenterY - headRadius - hairLength);
+        ctx.stroke();
+
+        // Left tuft (angled upwards and to the left)
+        // Start point on the upper-left part of the head's circumference
+        const leftTuftAngle = Math.PI * 1.25; // Angle for the base of the left tuft (approx 225 degrees, or pointing up-left)
+        const leftTuftStartX = headCenterX + headRadius * Math.cos(leftTuftAngle);
+        const leftTuftStartY = headCenterY + headRadius * Math.sin(leftTuftAngle);
+        ctx.beginPath();
+        ctx.moveTo(leftTuftStartX, leftTuftStartY);
+        ctx.lineTo(leftTuftStartX - hairLength * 0.7, leftTuftStartY - hairLength * 0.7); // Angled outwards
+        ctx.stroke();
+        
+        // Right tuft (angled upwards and to the right)
+        // Start point on the upper-right part of the head's circumference
+        const rightTuftAngle = Math.PI * 1.75; // Angle for the base of the right tuft (approx 315 degrees or pointing up-right)
+        const rightTuftStartX = headCenterX + headRadius * Math.cos(rightTuftAngle);
+        const rightTuftStartY = headCenterY + headRadius * Math.sin(rightTuftAngle);
+        ctx.beginPath();
+        ctx.moveTo(rightTuftStartX, rightTuftStartY);
+        ctx.lineTo(rightTuftStartX + hairLength * 0.7, rightTuftStartY - hairLength * 0.7); // Angled outwards
+        ctx.stroke();
+
+        // Facial Stitches
+        // Forehead stitch
+        drawStitch(
+            headCenterX - headRadius * 0.4, headCenterY - headRadius * 0.7,
+            headCenterX + headRadius * 0.4, headCenterY - headRadius * 0.7
+        );
+
+        // Side stitch (left side)
+        drawStitch(
+            headCenterX - headRadius * 0.8, headCenterY - headRadius * 0.3,
+            headCenterX - headRadius * 0.8, headCenterY + headRadius * 0.3
+        );
+        
+        // Optional: another small stitch on the other side or cheek
+        drawStitch(
+            headCenterX + headRadius * 0.6, headCenterY + headRadius * 0.5,
+            headCenterX + headRadius * 0.8, headCenterY + headRadius * 0.4
+        );
+
     }
 
     // Left Arm
@@ -332,7 +402,7 @@ function updateSidebar() {
 // --- Item Definitions ---
 const items = [
     {
-        id: 'armRight',
+        id: 'armRightnow okay',
         x: 0, // Placeholder, set in positionItemsInRoom
         y: 0, // Placeholder
         width: 25, 
