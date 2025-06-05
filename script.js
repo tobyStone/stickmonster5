@@ -399,72 +399,24 @@ function updateSidebar() {
     // Add more parts as needed
 }
 
-// --- Item Definitions ---
-const items = [
-    {
-        id: 'armRight',
-        x: 0, // Placeholder, set in positionItemsInRoom
-        y: 0, // Placeholder
-        width: 25, 
-        height: 15,
-        color: '#fff',
-        isDiscovered: false,
-        name: 'Right Arm',
-        description: "A d.t.ch.d r.ght .rm. L..ks l.ke m.n.", // ~70% blurred
-        isCollected: false // New property
-    },
-    {
-        id: 'legLeft', 
-        x: 0, // Placeholder
-        y: 0, // Placeholder
-        width: 20,
-        height: 30,
-        color: '#fff',
-        isDiscovered: false,
-        name: 'A Leg',
-        description: "A s.v.r.d l.g. M.ght b. us.f.l.", // ~70% blurred
-        isCollected: false // New property
-    },
-    // Surgeon's Chair (center of room)
-    {
-        id: 'surgeonsChair',
-        x: 0, // Placeholder, will be set in positionItemsInRoom
-        y: 0, // Placeholder
-        width: 40, 
-        height: 60,
-        color: '#fff', // White outline
-        isDiscovered: false,
-        name: "Surgeon's Chair",
-        description: "An old surgeon's ch..r. It l..ks unc.mf.rt.ble." 
-    },
-    // Rickety Table
-    {
-        id: 'ricketyTable',
-        x: 0, // Placeholder
-        y: 0, // Placeholder
-        width: 70,
-        height: 50,
-        color: '#fff',
-        isDiscovered: false,
-        name: "Rickety Table",
-        description: "A r.ck.ty t.bl.. St.nds ..stead.ly." 
-    },
-    // Tray with Tools (on the table)
-    {
-        id: 'toolsTray',
-        x: 0, // Placeholder (will be relative to table)
-        y: 0, // Placeholder (will be relative to table)
-        width: 30,
-        height: 10, // Tray is flat
-        color: '#fff',
-        isDiscovered: false, 
-        name: "Tray of Tools",
-        description: "R.sty s.rg.c.l t..ls. Th.y gl.nt ..ntly."
-    }
-];
+// Function to generate random positions for items
+function generateRandomPosition() {
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
+    const radius = Math.min(canvas.width, canvas.height) * 0.4;
+    
+    // Generate random angle
+    const angle = Math.random() * 2 * Math.PI;
+    // Generate random distance from center (within room)
+    const distance = radius * 0.3 + Math.random() * (radius * 0.6);
+    
+    // Calculate position
+    const x = centerX + distance * Math.cos(angle);
+    const y = centerY + distance * Math.sin(angle);
+    
+    return { x, y };
+}
 
-// Adjust item positions to be within the octagon after canvas is sized.
-function positionItemsInRoom() {
     const centerX = canvas.width / 2;
     const centerY = canvas.height / 2;
     const radius = Math.min(canvas.width, canvas.height) * 0.4; // Room radius
