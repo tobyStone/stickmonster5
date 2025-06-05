@@ -422,7 +422,7 @@ const items = [
         color: '#fff',
         isDiscovered: false,
         name: 'A Leg',
-        description: "A s.v.r.d l.g. M.ght b. us.f.l.", // ~70% blurred
+        description: "A s.ver.d l.g. M.ght b. us.f.l.", // ~70% blurred
         isCollected: false // New property
     },
     // Surgeon's Chair (center of room)
