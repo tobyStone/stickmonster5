@@ -820,7 +820,7 @@ function checkCollisions() {
                     monster.canHop = true;
                     if (item.hasOwnProperty('isCollected')) item.isCollected = true; // Set as collected
                     updateSidebar();
-                    console.log("Monster can now hop!");
+                    console.log("Monster can now hoppy!");
                 }
                 // For other items (furniture), they just become discovered.
             }
