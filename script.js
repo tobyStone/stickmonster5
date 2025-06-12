@@ -9,6 +9,16 @@ const monsterBodyDisplay = document.getElementById('monster-body');
 // Game state variables
 let gameObjects = []; // To store monster, items, room elements
 let activeSpeechBubbles = [];
+let doorState = {
+    isOpen: false,
+    isInteractable: true,
+    lastInteractionTime: 0,
+    interactionCooldown: 1000, // milliseconds between interactions
+    width: 30,
+    height: 10,
+    position: { x: 0, y: 0 }, // Will be set when drawing
+    normal: { x: 0, y: 0 } // Will store the door's normal vector for collision
+};
 let monster = {
     x: 100, // Initial position
     y: 100,
@@ -136,6 +146,60 @@ function drawOctagonRoom() {
     }
     ctx.closePath(); // Connect back to the start
     ctx.stroke();
+
+    // Draw the door at the top-left segment (between vertices 0 and 1)
+    const v0 = visualVertices[0];
+    const v1 = visualVertices[1];
+    const midX = (v0.x + v1.x) / 2;
+    const midY = (v0.y + v1.y) / 2;
+    const dx = v1.x - v0.x;
+    const dy = v1.y - v0.y;
+    const length = Math.sqrt(dx*dx + dy*dy);
+    const normX = -dy / length;
+    const normY = dx / length;
+    
+    // Update door state with current position and normal
+    doorState.position.x = midX + normX * (doorState.height / 2);
+    doorState.position.y = midY + normY * (doorState.height / 2);
+    doorState.normal.x = normX;
+    doorState.normal.y = normY;
+    
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 2;
+
+    if (doorState.isOpen) {
+        // Draw open door (rotated 90 degrees)
+        const openAngle = Math.PI / 2; // 90 degrees in radians
+        const rotatedX = doorState.position.x + Math.cos(openAngle) * doorState.width/2;
+        const rotatedY = doorState.position.y + Math.sin(openAngle) * doorState.width/2;
+        
+        ctx.beginPath();
+        ctx.moveTo(doorState.position.x, doorState.position.y);
+        ctx.lineTo(rotatedX, rotatedY);
+        ctx.stroke();
+        
+        // Draw door frame
+        ctx.beginPath();
+        ctx.arc(doorState.position.x, doorState.position.y, doorState.width/2, 0, openAngle);
+        ctx.stroke();
+    } else {
+        // Draw closed door
+        ctx.strokeRect(
+            doorState.position.x - doorState.width / 2,
+            doorState.position.y - doorState.height / 2,
+            doorState.width,
+            doorState.height
+        );
+        
+        // Door frame details
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(doorState.position.x - doorState.width / 2 + 5, doorState.position.y - doorState.height / 2);
+        ctx.lineTo(doorState.position.x - doorState.width / 2 + 5, doorState.position.y + doorState.height / 2);
+        ctx.moveTo(doorState.position.x + doorState.width / 2 - 5, doorState.position.y - doorState.height / 2);
+        ctx.lineTo(doorState.position.x + doorState.width / 2 - 5, doorState.position.y + doorState.height / 2);
+        ctx.stroke();
+    }
 
     // Optional: Add a slightly thinner inner or outer line for more depth, or vary thickness per segment
     // For example, draw another slightly smaller octagon with thinner lines
@@ -399,23 +463,69 @@ function updateSidebar() {
     // Add more parts as needed
 }
 
-// Function to generate random positions for items
-function generateRandomPosition() {
-    const centerX = canvas.width / 2;
-    const centerY = canvas.height / 2;
-    const radius = Math.min(canvas.width, canvas.height) * 0.4;
-    
-    // Generate random angle
-    const angle = Math.random() * 2 * Math.PI;
-    // Generate random distance from center (within room)
-    const distance = radius * 0.3 + Math.random() * (radius * 0.6);
-    
-    // Calculate position
-    const x = centerX + distance * Math.cos(angle);
-    const y = centerY + distance * Math.sin(angle);
-    
-    return { x, y };
-}
+// --- Item Definitions ---
+const items = [
+    {
+        id: 'armRight',
+        x: 0, // Placeholder, set in positionItemsInRoom
+        y: 0, // Placeholder
+        width: 25, 
+        height: 15,
+        color: '#fff',
+        isDiscovered: false,
+        name: 'Right Arm',
+        description: "A d.t.ch.d r.ght .rm. Lo.ks l.ke m.n.", // ~70% blurred
+        isCollected: false // New property
+    },
+    {
+        id: 'legLeft', 
+        x: 0, // Placeholder
+        y: 0, // Placeholder
+        width: 20,
+        height: 30,
+        color: '#fff',
+        isDiscovered: false,
+        name: 'A Leg',
+        description: "A s.ver.d l.g. M.ght b. us.f.l.", // ~70% blurred
+        isCollected: false // New property
+    },
+    // Surgeon's Chair (center of room)
+    {
+        id: 'surgeonsChair',
+        x: 0, // Placeholder, will be set in positionItemsInRoom
+        y: 0, // Placeholder
+        width: 40, 
+        height: 60,
+        color: '#fff', // White outline
+        isDiscovered: false,
+        name: "Surgeon's Chair",
+        description: "An old surgeon's ch..r. It l..ks unc.mf.rt.ble." 
+    },
+    // Rickety Table
+    {
+        id: 'ricketyTable',
+        x: 0, // Placeholder
+        y: 0, // Placeholder
+        width: 70,
+        height: 50,
+        color: '#fff',
+        isDiscovered: false,
+        name: "Rickety Table",
+        description: "A r.ck.ty t.bl.. St.nds ..stead.ly." 
+    },
+    // Tray with Tools (on the table)
+    {
+        id: 'toolsTray',
+        x: 0, // Placeholder (will be relative to table)
+        y: 0, // Placeholder (will be relative to table)
+        width: 30,
+        height: 10, // Tray is flat
+        color: '#fff',
+        isDiscovered: false, 
+        name: "Tray of Tools",
+        description: "R.sty s.rg.c.l t..ls. Th.y gl.nt ..ntly."
+    }
+];
 
     const centerX = canvas.width / 2;
     const centerY = canvas.height / 2;
@@ -574,6 +684,56 @@ document.addEventListener('keyup', (event) => {
     keysPressed[event.key] = false;
 });
 
+function checkDoorCollision(monsterBounds) {
+    if (doorState.isOpen) return false; // No collision when door is open
+    
+    // Check if monster's bounding box intersects with door
+    const doorLeft = doorState.position.x - doorState.width / 2;
+    const doorRight = doorState.position.x + doorState.width / 2;
+    const doorTop = doorState.position.y - doorState.height / 2;
+    const doorBottom = doorState.position.y + doorState.height / 2;
+    
+    return !(monsterBounds.maxX < doorLeft || 
+             monsterBounds.minX > doorRight || 
+             monsterBounds.maxY < doorTop || 
+             monsterBounds.minY > doorBottom);
+}
+
+function checkDoorInteraction(monsterBounds) {
+    if (!doorState.isInteractable) return;
+    
+    const now = Date.now();
+    if (now - doorState.lastInteractionTime < doorState.interactionCooldown) return;
+    
+    // Check if monster is close enough to interact (within 50 pixels)
+    const dx = (monsterBounds.minX + monsterBounds.maxX) / 2 - doorState.position.x;
+    const dy = (monsterBounds.minY + monsterBounds.maxY) / 2 - doorState.position.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    
+    if (distance < 50) {
+        // Check for interaction key (E)
+        if (keysPressed['e'] || keysPressed['E']) {
+            doorState.isOpen = !doorState.isOpen;
+            doorState.lastInteractionTime = now;
+            
+            // Show interaction message
+            const message = doorState.isOpen ? "The door creaks open..." : "The door slams shut!";
+            showSpeechBubble({
+                x: doorState.position.x,
+                y: doorState.position.y - 20,
+                text: message
+            });
+        } else if (distance < 30) {
+            // Show hint when close but not interacting
+            showSpeechBubble({
+                x: doorState.position.x,
+                y: doorState.position.y - 20,
+                text: "Press E to interact"
+            });
+        }
+    }
+}
+
 function handleMovement() {
     let dx = 0;
     let dy = 0;
@@ -599,21 +759,33 @@ function handleMovement() {
     const nextX = monster.x + dx;
     const nextY = monster.y + dy;
     
-    const monsterBoundingBox = [
-        { x: nextX, y: nextY },                                       
-        { x: nextX + monster.width, y: nextY },                       
-        { x: nextX + monster.width, y: nextY + monster.height },      
-        { x: nextX, y: nextY + monster.height }                       
-    ];
+    const monsterBoundingBox = getMonsterBoundingBox({
+        x: nextX,
+        y: nextY,
+        width: monster.width,
+        height: monster.height,
+        parts: monster.parts
+    });
 
     const octagonVertices = getOctagonVertices();
     let canMove = true;
 
-    for (const corner of monsterBoundingBox) {
+    // Check octagon collision
+    for (const corner of [
+        { x: monsterBoundingBox.minX, y: monsterBoundingBox.minY },
+        { x: monsterBoundingBox.maxX, y: monsterBoundingBox.minY },
+        { x: monsterBoundingBox.maxX, y: monsterBoundingBox.maxY },
+        { x: monsterBoundingBox.minX, y: monsterBoundingBox.maxY }
+    ]) {
         if (!isPointInOctagon(corner.x, corner.y, octagonVertices)) {
             canMove = false;
             break;
         }
+    }
+
+    // Check door collision
+    if (canMove && checkDoorCollision(monsterBoundingBox)) {
+        canMove = false;
     }
 
     if (canMove) {
@@ -660,6 +832,8 @@ function checkCollisions() {
 function gameLoop() {
     handleMovement();
     checkCollisions();
+    const monsterBounds = getMonsterBoundingBox(monster);
+    checkDoorInteraction(monsterBounds);
     drawGame();
     requestAnimationFrame(gameLoop);
 }
