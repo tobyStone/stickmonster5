@@ -1,0 +1,6 @@
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.sqlite 

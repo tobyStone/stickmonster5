@@ -527,8 +527,6 @@ const items = [
     }
 ];
 
-// Adjust item positions to be within the octagon after canvas is sized.
-function positionItemsInRoom() {
     const centerX = canvas.width / 2;
     const centerY = canvas.height / 2;
     const radius = Math.min(canvas.width, canvas.height) * 0.4; // Room radius
