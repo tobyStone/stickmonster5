@@ -467,75 +467,71 @@ function updateSidebar() {
 const items = [
     {
         id: 'armRight',
-        x: 0, // Placeholder, set in positionItemsInRoom
-        y: 0, // Placeholder
-        width: 25, 
+        x: 0,
+        y: 0,
+        width: 25,
         height: 15,
         color: '#fff',
         isDiscovered: false,
         name: 'Right Arm',
-        description: "A d.t.ch.d r.ght .rm. Lo.ks l.ke m.n.", // ~70% blurred
-        isCollected: false // New property
+        description: "A d.t.ch.d r.ght .rm. Lo.ks l.ke m.n.",
+        isCollected: false
     },
     {
-        id: 'legLeft', 
-        x: 0, // Placeholder
-        y: 0, // Placeholder
+        id: 'legLeft',
+        x: 0,
+        y: 0,
         width: 20,
         height: 30,
         color: '#fff',
         isDiscovered: false,
         name: 'A Leg',
-        description: "A s.ver.d l.g. M.ght b. us.f.l.", // ~70% blurred
-        isCollected: false // New property
+        description: "A s.ver.d l.g. M.ght b. us.f.l.",
+        isCollected: false
     },
-    // Surgeon's Chair (center of room)
     {
         id: 'surgeonsChair',
-        x: 0, // Placeholder, will be set in positionItemsInRoom
-        y: 0, // Placeholder
-        width: 40, 
+        x: 0,
+        y: 0,
+        width: 40,
         height: 60,
-        color: '#fff', // White outline
+        color: '#fff',
         isDiscovered: false,
         name: "Surgeon's Chair",
-        description: "An old surgeon's ch..r. It l..ks unc.mf.rt.ble." 
+        description: "An old surgeon's ch..r. It l..ks unc.mf.rt.ble."
     },
-    // Rickety Table
     {
         id: 'ricketyTable',
-        x: 0, // Placeholder
-        y: 0, // Placeholder
+        x: 0,
+        y: 0,
         width: 70,
         height: 50,
         color: '#fff',
         isDiscovered: false,
         name: "Rickety Table",
-        description: "A r.ck.ty t.bl.. St.nds ..stead.ly." 
+        description: "A r.ck.ty t.bl.. St.nds ..stead.ly."
     },
-    // Tray with Tools (on the table)
     {
         id: 'toolsTray',
-        x: 0, // Placeholder (will be relative to table)
-        y: 0, // Placeholder (will be relative to table)
+        x: 0,
+        y: 0,
         width: 30,
-        height: 10, // Tray is flat
+        height: 10,
         color: '#fff',
-        isDiscovered: false, 
+        isDiscovered: false,
         name: "Tray of Tools",
         description: "R.sty s.rg.c.l t..ls. Th.y gl.nt ..ntly."
     }
 ];
 
+function positionItemsInRoom() {
     const centerX = canvas.width / 2;
     const centerY = canvas.height / 2;
-    const radius = Math.min(canvas.width, canvas.height) * 0.4; // Room radius
+    const radius = Math.min(canvas.width, canvas.height) * 0.4;
 
-    // Monster starting position (can be adjusted, e.g., on a surgical couch placeholder)
-    monster.x = centerX + radius * 0.1; // Slightly offset from pure center
+    monster.x = centerX + radius * 0.1;
     monster.y = centerY + radius * 0.1;
 
-    // Position existing items (arm and leg)
     const arm = items.find(item => item.id === 'armRight');
     if (arm) {
         arm.x = centerX + radius * 0.6;
@@ -548,58 +544,51 @@ const items = [
         leg.y = centerY + radius * 0.6;
     }
 
-    // Position new furniture
     const chair = items.find(item => item.id === 'surgeonsChair');
     if (chair) {
-        chair.x = centerX - chair.width / 2; // Centered horizontally
-        chair.y = centerY - chair.height / 2 - radius * 0.1; // Slightly towards top-center
+        chair.x = centerX - chair.width / 2;
+        chair.y = centerY - chair.height / 2 - radius * 0.1;
     }
 
     const table = items.find(item => item.id === 'ricketyTable');
-    if (table && chair) { // Ensure chair exists for relative positioning
-        // Position table next to chair, e.g., to the right
-        table.x = chair.x + chair.width + 20; // 20px space from chair
-        table.y = centerY - table.height / 2; // Align mid-points vertically roughly
-    } else if (table) { // Fallback if chair is not found
-        table.x = centerX + 50; // Default position if chair is missing
+    if (table && chair) {
+        table.x = chair.x + chair.width + 20;
+        table.y = centerY - table.height / 2;
+    } else if (table) {
+        table.x = centerX + 50;
         table.y = centerY - table.height / 2;
     }
     
     const tray = items.find(item => item.id === 'toolsTray');
-    if (tray && table) { // Ensure table exists to position tray on it
-        tray.x = table.x + (table.width - tray.width) / 2; // Centered on table
-        tray.y = table.y - tray.height - 2; // On top of table, with small gap
+    if (tray && table) {
+        tray.x = table.x + (table.width - tray.width) / 2;
+        tray.y = table.y - tray.height - 2;
     }
 }
-
 
 // --- Drawing Functions (Additions) ---
 
 function drawItems() {
     items.forEach(item => {
-        // If item is collected, do not draw it, regardless of discovery state
-        if (item.isCollected === true) { // Check explicitly for true
-            return; // Skip drawing this item
+        if (item.isCollected === true) {
+            return;
         }
 
-        if (item.isDiscovered) { // Only draw if discovered (and not collected)
+        if (item.isDiscovered) {
             ctx.strokeStyle = item.color;
-            ctx.lineWidth = 1; 
+            ctx.lineWidth = 1;
 
             if (item.id === 'armRight') {
-                // Main arm part
                 ctx.strokeRect(item.x, item.y, item.width, item.height);
-                const handWidth = item.height; 
+                const handWidth = item.height;
                 const handLength = item.width * 0.3;
-                ctx.strokeRect(item.x + item.width, item.y, handLength, handWidth); 
+                ctx.strokeRect(item.x + item.width, item.y, handLength, handWidth);
             } else if (item.id === 'legLeft') {
-                // Main leg part
                 ctx.strokeRect(item.x, item.y, item.width, item.height);
-                const footLength = item.width * 1.5; 
+                const footLength = item.width * 1.5;
                 const footThickness = item.height * 0.2;
                 ctx.strokeRect(item.x - (footLength - item.width) / 2, item.y + item.height, footLength, footThickness);
             } else {
-                // Default drawing for other items (e.g., furniture)
                 ctx.strokeRect(item.x, item.y, item.width, item.height);
             }
         }
@@ -612,9 +601,9 @@ function drawGame() {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     drawOctagonRoom();
-    drawItems(); 
+    drawItems();
     drawMonster();
-    drawSpeechBubbles(); // Draw speech bubbles on top
+    drawSpeechBubbles();
 }
 
 // --- Speech Bubble Logic ---
@@ -865,14 +854,14 @@ window.onclick = function(event) {
 function initGame() {
     window.addEventListener('resize', () => {
         resizeCanvas();
-        positionItemsInRoom(); 
+        positionItemsInRoom();
     });
-    resizeCanvas(); 
-    positionItemsInRoom(); 
-    updateSidebar(); 
+    resizeCanvas();
+    positionItemsInRoom();
+    updateSidebar();
     
     requestAnimationFrame(gameLoop);
 }
 
-// The existing initGame() call at the end of the file should remain
+// Initialize the game
 initGame();
