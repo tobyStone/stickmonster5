@@ -137,6 +137,50 @@ function drawOctagonRoom() {
     ctx.closePath(); // Connect back to the start
     ctx.stroke();
 
+    // Draw the door at the top-left segment (between vertices 0 and 1)
+    const doorWidth = 30; // pixels
+    const doorHeight = 10;
+    const v0 = visualVertices[0];
+    const v1 = visualVertices[1];
+    
+    // Calculate midpoint of the edge
+    const midX = (v0.x + v1.x) / 2;
+    const midY = (v0.y + v1.y) / 2;
+    
+    // Calculate perpendicular direction to the edge
+    const dx = v1.x - v0.x;
+    const dy = v1.y - v0.y;
+    const length = Math.sqrt(dx*dx + dy*dy);
+    const normX = -dy / length; // Perpendicular vector
+    const normY = dx / length;
+    
+    // Calculate door position (centered on the edge, slightly inset)
+    const doorX = midX + normX * (doorHeight / 2);
+    const doorY = midY + normY * (doorHeight / 2);
+    
+    // Draw door
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(doorX - doorWidth / 2, doorY - doorHeight / 2, doorWidth, doorHeight);
+    
+    // Add door frame details
+    ctx.lineWidth = 1;
+    // Vertical frame lines
+    ctx.beginPath();
+    ctx.moveTo(doorX - doorWidth / 2 + 5, doorY - doorHeight / 2);
+    ctx.lineTo(doorX - doorWidth / 2 + 5, doorY + doorHeight / 2);
+    ctx.moveTo(doorX + doorWidth / 2 - 5, doorY - doorHeight / 2);
+    ctx.lineTo(doorX + doorWidth / 2 - 5, doorY + doorHeight / 2);
+    ctx.stroke();
+    
+    // Horizontal frame lines
+    ctx.beginPath();
+    ctx.moveTo(doorX - doorWidth / 2, doorY - doorHeight / 2 + 2);
+    ctx.lineTo(doorX + doorWidth / 2, doorY - doorHeight / 2 + 2);
+    ctx.moveTo(doorX - doorWidth / 2, doorY + doorHeight / 2 - 2);
+    ctx.lineTo(doorX + doorWidth / 2, doorY + doorHeight / 2 - 2);
+    ctx.stroke();
+
     // Optional: Add a slightly thinner inner or outer line for more depth, or vary thickness per segment
     // For example, draw another slightly smaller octagon with thinner lines
     ctx.lineWidth = 1.5; // Thinner line for detail
